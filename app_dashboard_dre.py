@@ -200,9 +200,3 @@ def exportar_pdf(n, meses):
 
     return ""
 
-# ========================
-# RUN
-if __name__ == "__main__":
-    pass
-# ========================
-
