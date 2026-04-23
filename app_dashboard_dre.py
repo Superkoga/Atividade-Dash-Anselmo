@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.express as px
 import io
 
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+
 # ========================
 # LOGIN
 # ========================
@@ -45,7 +48,7 @@ def carregar_dados():
     return df
 
 # ========================
-# LOGIN UI
+# LOGIN
 # ========================
 def tela_login():
     st.title("🔐 Login")
@@ -111,11 +114,10 @@ def dashboard():
             st.error(f"Mês {i}: perda de R$ {abs(row['Diferença']):,.0f}")
 
     # ========================
-    # EXPORTAÇÃO (FUNCIONAL)
+    # EXPORTAÇÃO CSV
     # ========================
-    st.subheader("📥 Exportar")
+    st.subheader("📥 Exportar dados")
 
-    # CSV
     csv = df_f.to_csv(index=False).encode("utf-8")
 
     st.download_button(
@@ -125,16 +127,55 @@ def dashboard():
         mime="text/csv"
     )
 
-    # IMAGEM (substitui PDF)
-    if st.button("Gerar imagem do gráfico"):
-        buf = io.BytesIO()
-        fig.write_image(buf, format="png")
+    # ========================
+    # EXPORTAÇÃO PDF (FUNCIONANDO)
+    # ========================
+    st.subheader("📄 Exportar PDF")
+
+    if st.button("Gerar PDF"):
+        buffer = io.BytesIO()
+
+        doc = SimpleDocTemplate(buffer)
+        styles = getSampleStyleSheet()
+
+        elementos = []
+
+        elementos.append(Paragraph("Relatório DRE", styles["Title"]))
+        elementos.append(Spacer(1, 12))
+
+        elementos.append(Paragraph("Resumo:", styles["Heading2"]))
+        elementos.append(Spacer(1, 12))
+
+        for i, row in resumo.iterrows():
+            elementos.append(
+                Paragraph(
+                    f"Mês {row['Mes']} - {row['Tipo']}: R$ {row['Valor']:,.2f}",
+                    styles["Normal"]
+                )
+            )
+
+        elementos.append(Spacer(1, 20))
+        elementos.append(Paragraph("Perdas identificadas:", styles["Heading2"]))
+        elementos.append(Spacer(1, 12))
+
+        if perdas.empty:
+            elementos.append(Paragraph("Nenhuma perda identificada.", styles["Normal"]))
+        else:
+            for i, row in perdas.iterrows():
+                elementos.append(
+                    Paragraph(
+                        f"Mês {i}: perda de R$ {abs(row['Diferença']):,.2f}",
+                        styles["Normal"]
+                    )
+                )
+
+        doc.build(elementos)
 
         st.download_button(
-            label="Baixar gráfico (PNG)",
-            data=buf.getvalue(),
-            file_name="dashboard.png",
-            mime="image/png"
+            label="Baixar PDF",
+            data=buffer.getvalue(),
+            file_name="relatorio_dre.pdf",
+            mime="application/pdf"
         )
 
 # ========================
