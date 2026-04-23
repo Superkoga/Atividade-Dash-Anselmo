@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import io
 
 # ========================
 # LOGIN
@@ -68,7 +69,7 @@ def dashboard():
 
     df = carregar_dados()
 
-    # filtro de mês
+    # filtro
     meses = st.multiselect(
         "Selecione o mês",
         options=sorted(df["Mes"].unique())
@@ -94,7 +95,7 @@ def dashboard():
     st.plotly_chart(fig, use_container_width=True)
 
     # ========================
-    # PERDAS (igual seu Dash)
+    # PERDAS
     # ========================
     st.subheader("🔍 Detecção de perdas")
 
@@ -110,16 +111,34 @@ def dashboard():
             st.error(f"Mês {i}: perda de R$ {abs(row['Diferença']):,.0f}")
 
     # ========================
-    # EXPORTAR PDF (igual ideia do Dash)
+    # EXPORTAÇÃO (FUNCIONAL)
     # ========================
-    st.subheader("📄 Exportar")
+    st.subheader("📥 Exportar")
 
-    if st.button("Gerar PDF"):
-        fig.write_image("dashboard.pdf")
-        st.success("PDF gerado com sucesso!")
+    # CSV
+    csv = df_f.to_csv(index=False).encode("utf-8")
+
+    st.download_button(
+        label="Baixar dados (CSV)",
+        data=csv,
+        file_name="dados_dre.csv",
+        mime="text/csv"
+    )
+
+    # IMAGEM (substitui PDF)
+    if st.button("Gerar imagem do gráfico"):
+        buf = io.BytesIO()
+        fig.write_image(buf, format="png")
+
+        st.download_button(
+            label="Baixar gráfico (PNG)",
+            data=buf.getvalue(),
+            file_name="dashboard.png",
+            mime="image/png"
+        )
 
 # ========================
-# CONTROLE DE TELA
+# APP PRINCIPAL
 # ========================
 if not st.session_state.logged:
     tela_login()
